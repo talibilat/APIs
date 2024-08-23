@@ -1,57 +1,88 @@
-
-from fastapi import Body, Depends, FastAPI, Response, status, HTTPException, Depends, APIRouter
+from fastapi import Body, Depends, FastAPI, Response, status, HTTPException, APIRouter
 from sqlalchemy.orm import Session
 from .. import schemas, models
-from .. database import get_db
+from ..database import get_db
+from . import oauth2
 from typing import List
 
-
-router = APIRouter(prefix="/posts", tags=['Posts'])
-
-
-@router.get("", response_model = List[schemas.Post])
-def get_post(db : Session = Depends(get_db)):
-    returieved_post = db.query(models.Post).all()
-    return returieved_post
+# Create an APIRouter for posts with a common prefix and tag
+router = APIRouter(
+    prefix="/posts",  # All routes will start with '/posts'
+    tags=['Posts']  # Group the routes under 'Posts' for documentation
+)
 
 
-@router.get("/{id}", response_model = schemas.Post)
-def get_post(id: int, response: Response, db : Session = Depends(get_db)):
-    retrieved_post = db.query(models.Post).filter(models.Post.id == id).first()
-    if not retrieved_post:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND,
-                            detail=f'post with id: {id} was not found')
-    return retrieved_post
+# Route to get all posts
+@router.get("", response_model=List[schemas.Post])
+def get_post(db: Session = Depends(get_db), current_user: int = Depends(oauth2.get_current_user)):
+    """Retrieve all posts"""
+    retrieved_posts = db.query(models.Post).all()  # Fetch all posts from the database
+    # retrieved_posts = db.query(models.Post).filter(models.Post.owner_id == current_user.id).all()  Only individual posts
+
+    return retrieved_posts  # Return the list of posts
 
 
-@router.post('', status_code=status.HTTP_201_CREATED, response_model = schemas.Post)
-def create_post(post: schemas.PostCreate, db : Session = Depends(get_db)):
-    new_post = models.Post(**post.model_dump())
-    db.add(new_post)
-    db.commit()
-    db.refresh(new_post)
-    return new_post
+# Route to get a post by ID
+@router.get("/{id}", response_model=schemas.Post)
+def get_post(id: int, response: Response, db: Session = Depends(get_db), current_user: int = Depends(oauth2.get_current_user)):
+    """Retrieve a post by its ID"""
+    retrieved_post = db.query(models.Post).filter(models.Post.id == id).first()  # Fetch the post with the given ID
+    if not retrieved_post:  # If no post is found, raise a 404 error
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f'Post with id: {id} was not found'
+        )
+    return retrieved_post  # Return the retrieved post
 
 
-@router.delete('/{id}}', status_code=status.HTTP_204_NO_CONTENT)
-def delete_post(id: int, db : Session = Depends(get_db)):
-    deleted_post = db.query(models.Post).delete(models.Post.id == id)
-    if deleted_post == None:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND,
-                            details = f'posr with id {id} was not found')
-    db.commit()
-    return Response(status_code=status.HTTP_204_NO_CONTENT)
+# Route to create a new post
+@router.post('', status_code=status.HTTP_201_CREATED, response_model=schemas.Post)
+def create_post(post: schemas.PostCreate, db: Session = Depends(get_db), current_user: int = Depends(oauth2.get_current_user)):
+    """Create a new post"""
+    new_post = models.Post(owner_id = current_user.id, **post.model_dump())  # Create a new post instance with the provided data
+    db.add(new_post)  # Add the new post to the database session
+    db.commit()  # Commit the session to save the post
+    db.refresh(new_post)  # Refresh the post object to get its updated state
+    return new_post  # Return the newly created post
 
 
-@router.put(("/{id}"), response_model = schemas.Post)
-def update_post(id: int, post: schemas.PostCreate, db : Session = Depends(get_db)):
-    filtered_post = db.query(models.Post).filter(models.Post.id == id)
-    updated_post = filtered_post.update
-    if updated_post == None:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"ID:{id} does not exist")
-    new = filtered_post.update(post.model_dump(), synchronize_session=False)
-    db.commit()
+# Route to delete a post by ID
+@router.delete('/{id}', status_code=status.HTTP_204_NO_CONTENT)
+def delete_post(id: int, db: Session = Depends(get_db), current_user: int = Depends(oauth2.get_current_user)):
+    """Delete a post by its ID"""
+    query_post = db.query(models.Post).filter(models.Post.id == id)# Find the post to delete
+    deleted_post = query_post.first()
+    if not deleted_post:  # If post is not found, raise a 404 error
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f'Post with id {id} was not found'
+        )
+    if deleted_post.owner_id != current_user.id:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Not authorised to perform this action")
     
-    return new
+    db.delete(query_post)  # Delete the found post
+    db.commit()  # Commit the session to save the changes
+    return Response(status_code=status.HTTP_204_NO_CONTENT)  # Return a 204 No Content response
 
 
+# Route to update a post by ID
+@router.put("/{id}", response_model=schemas.Post)
+def update_post(id: int, post: schemas.PostCreate, db: Session = Depends(get_db), current_user: int = Depends(oauth2.get_current_user)):
+    """Update a post by its ID"""
+    query_post = db.query(models.Post).filter(models.Post.id == id)  # Find the post to update
+    filtered_post = query_post.first()
+    if filtered_post is None:  # If no post is found, raise a 404 error
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Post with ID:{id} does not exist"
+        )
+    if filtered_post.owner_id != current_user.id:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Not authorised to perform this action")
+    # Perform the update using the data provided in the request body
+    query_post.update(post.model_dump(), synchronize_session=False)
+    db.commit()  # Commit the session to save the changes
+
+    # Fetch the updated post from the database
+    updated_post = query_post.first()
+
+    return updated_post  # Return the updated post

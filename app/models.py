@@ -1,8 +1,9 @@
 from turtle import title
 from .database import Base
-from sqlalchemy import Column, Integer, String, Boolean, column
+from sqlalchemy import Column, Integer, String, Boolean, column, ForeignKey
 from sqlalchemy.sql.expression import text
 from sqlalchemy.sql.sqltypes import TIMESTAMP
+from sqlalchemy.orm import relationship
 
 
 class Post(Base):
@@ -13,10 +14,12 @@ class Post(Base):
     content= Column(String, nullable=False)
     published= Column(String, server_default="True", nullable=True)
     created_at= Column(TIMESTAMP(timezone=True), nullable=True, server_default=text('now()'))
+    owner_id = Column(Integer, ForeignKey("users.id", ondelete = "CASCADE"), nullable=False )
+    owner = relationship("User")
 
 
 class User(Base):
-    __tablename__ = "user"
+    __tablename__ = "users"
     id = Column(Integer, primary_key=True, nullable=False)
     email = Column(String, nullable=False, unique=True)
     password = Column(String, nullable=False)
