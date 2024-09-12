@@ -1,9 +1,11 @@
-from fastapi import Body, Depends, FastAPI, Response, status, HTTPException, APIRouter
+from fastapi import Depends, Response, status, HTTPException, APIRouter
 from sqlalchemy.orm import Session
+from sqlalchemy import func
 from .. import schemas, models
 from ..database import get_db
 from . import oauth2
-from typing import List
+from typing import List, Optional
+
 
 # Create an APIRouter for posts with a common prefix and tag
 router = APIRouter(
@@ -12,14 +14,19 @@ router = APIRouter(
 )
 
 
-# Route to get all posts
-@router.get("", response_model=List[schemas.Post])
-def get_post(db: Session = Depends(get_db), current_user: int = Depends(oauth2.get_current_user)):
-    """Retrieve all posts"""
-    retrieved_posts = db.query(models.Post).all()  # Fetch all posts from the database
-    # retrieved_posts = db.query(models.Post).filter(models.Post.owner_id == current_user.id).all()  Only individual posts
 
-    return retrieved_posts  # Return the list of posts
+
+
+@router.get("", response_model=List[schemas.PostOut])
+def get_posts(db: Session = Depends(get_db), current_user: int = Depends(oauth2.get_current_user), limit: int = 10, skip: int = 0, search: Optional[str] = ""):
+    # posts = db.query(models.Post, func.count(models.Vote.post_id).label("votes")).join(models.Vote, models.Vote.post_id == models.Post.id, isouter=True).group_by(models.Post.id).filter(models.Post.title.contains(search)).limit(limit).offset(skip).all()
+
+
+    posts = db.query(models.Post, func.count(models.Vote.post_id).label("votes")).join(
+        models.Vote, models.Vote.post_id == models.Post.id, isouter=True).group_by(models.Post.id).filter(models.Post.title.contains(search)).limit(limit).offset(skip).all()
+    return posts
+
+
 
 
 # Route to get a post by ID
@@ -60,7 +67,7 @@ def delete_post(id: int, db: Session = Depends(get_db), current_user: int = Depe
     if deleted_post.owner_id != current_user.id:
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Not authorised to perform this action")
     
-    db.delete(query_post)  # Delete the found post
+    db.delete(deleted_post)  # Delete the found post
     db.commit()  # Commit the session to save the changes
     return Response(status_code=status.HTTP_204_NO_CONTENT)  # Return a 204 No Content response
 
@@ -86,3 +93,7 @@ def update_post(id: int, post: schemas.PostCreate, db: Session = Depends(get_db)
     updated_post = query_post.first()
 
     return updated_post  # Return the updated post
+
+
+
+
