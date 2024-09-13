@@ -1,7 +1,12 @@
-Here's the README file in markdown format:
 
+# Mimicing the concept of Social Media using FastAPI
 
-# API Project
+## Features
+- Account Creation
+- Account Authentication (OAuth2)
+- Post Create, Read, Update and Delete(CRUD)
+- Post like and dislike
+- Post like and dislike counter
 
 This project is a Python-based web API application. It uses various tools and libraries to provide API functionality, likely for managing resources.
 
