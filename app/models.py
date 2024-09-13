@@ -1,4 +1,3 @@
-from turtle import title
 from .database import Base
 from sqlalchemy import Column, Integer, String, Boolean, column, ForeignKey
 from sqlalchemy.sql.expression import text
