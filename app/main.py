@@ -28,4 +28,4 @@ app.include_router(votes.router)
 
 @app.get('/')
 def root():
-    return {"message": "Hello, The App is running and this is the changes I made"}
+    return {"message": "Hello!"}

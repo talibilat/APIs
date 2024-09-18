@@ -1,5 +1,5 @@
 from certifi import contents
-from pydantic import BaseModel, EmailStr, conint
+from pydantic import BaseModel, EmailStr, conint, ConfigDict
 from pydantic.types import conint
 from typing import Optional
 from datetime import datetime
@@ -12,8 +12,11 @@ class UserCreate(BaseModel):
 class UserResponse(BaseModel):
     email: EmailStr
     id: int
-    class Config:
-        from_attributes = True
+
+    model_config = ConfigDict(arbitrary_types_allowed=True)
+
+    # class Config:
+    #     from_attributes = True
 
 class UserLogin(BaseModel):
     email: EmailStr
@@ -32,19 +35,21 @@ class Post(PostBase):
     created_at: datetime
     owner_id: int
     owner: UserResponse
-
-    class Config:
+    # model_config = ConfigDict(arbitrary_types_allowed=True)
+class Config:
         from_attributes = True
 
 class PostOut(BaseModel):
     Post: Post
     votes: int
+    
+    # model_config = ConfigDict(arbitrary_types_allowed=True)
 
     class Config:
         from_attributes = True
 
 
-class Token(BaseException):
+class Token(BaseModel):
     access_token: str
     token_type: str
 
@@ -57,11 +62,11 @@ class Vote(BaseModel):
     dir: int
 
 
-
 class PostResponse(BaseModel):
     id: int
     title: str
     content: str
 
+    # model_config = ConfigDict(arbitrary_types_allowed=True)
     class Config:
         from_attributes = True
