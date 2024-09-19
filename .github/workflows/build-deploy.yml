@@ -8,14 +8,14 @@ on:
 
 jobs:
   job1:
-    environment:
-      name: testing
+    # environment:
+    #   name: Test
     env:
       DATABASE_HOSTNAME: localhost
       DATABASE_PORT: 5432
-      DATABASE_PASSWORD: talib
+      DATABASE_PASSWORD: password123
       DATABASE_NAME: fastapi
-      DATABASE_USERNAME: talib
+      DATABASE_USERNAME: postgres
       SECRET_KEY: 09d25e094faa6ca2556c818166b7a9563b93f70f6f0f4caa6cf63b88e8d3e7
       ALGORITHM: HS256
       ACCESS_TOKEN_EXPIRE_MINUTES: 100
@@ -24,7 +24,7 @@ jobs:
       postgres:
         image: postgres
         env:
-          POSTGRES_PASSWORD: talib
+          POSTGRES_PASSWORD: password123
           POSTGRES_DB: fastapi_test
           # POSTGRES_USER: talib
         ports:
