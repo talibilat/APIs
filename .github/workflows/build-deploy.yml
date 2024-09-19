@@ -24,7 +24,6 @@ jobs:
       postgres:
         image: postgres:latest
         env:
-          POSTGRES_USER: ${{secrets.DATABASE_USERNAME}}       # Set your Postgres username
           POSTGRES_PASSWORD: ${{secrets.POSTGRES_PASSWORD}}    # Superuser password
           POSTGRES_DB: ${{secrets.DATABASE_NAME}}              # Default database name
         ports:
