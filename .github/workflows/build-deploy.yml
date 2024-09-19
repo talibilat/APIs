@@ -1,32 +1,27 @@
 name: Build and Deploy Code
 
-on: 
-  push: 
-    branches: ['main'] 
-  pull_request:
-    branches: ['main']
+on: [push, pull_request]
 
 jobs:
-  job1:
-    # environment:
-    #   name: Test
+  build:
+    environment:
+      name: testing
     env:
-      DATABASE_HOSTNAME: localhost
-      DATABASE_PORT: 5432
-      DATABASE_PASSWORD: password123
-      DATABASE_NAME: fastapi
-      DATABASE_USERNAME: postgres
-      SECRET_KEY: 09d25e094faa6ca2556c818166b7a9563b93f70f6f0f4caa6cf63b88e8d3e7
-      ALGORITHM: HS256
-      ACCESS_TOKEN_EXPIRE_MINUTES: 100
+      DATABASE_HOSTNAME: ${{secrets.DATABASE_HOSTNAME}}
+      DATABASE_PORT: ${{secrets.DATABASE_PORT}}
+      DATABASE_PASSWORD: ${{secrets.DATABASE_PASSWORD}}
+      DATABASE_NAME: ${{secrets.DATABASE_NAME}}
+      DATABASE_USERNAME: ${{secrets.DATABASE_USERNAME}}
+      SECRET_KEY: ${{secrets.SECRET_KEY}}
+      ALGORITHM: ${{secrets.ALGORITHM}}
+      ACCESS_TOKEN_EXPIRE_MINUTES: ${{secrets.ACCESS_TOKEN_EXPIRE_MINUTES}}
 
     services:
       postgres:
         image: postgres
         env:
-          POSTGRES_PASSWORD: password123
-          POSTGRES_DB: fastapi_test
-          # POSTGRES_USER: talib
+          POSTGRES_PASSWORD: ${{secrets.DATABASE_PASSWORD}}
+          POSTGRES_DB: ${{secrets.DATABASE_NAME}}_test
         ports:
           - 5432:5432
         options: >-
@@ -35,26 +30,19 @@ jobs:
           --health-timeout 5s
           --health-retries 5
 
-
     runs-on: ubuntu-latest
-
-    
     steps:
       - name: pulling git repo
-        uses: actions/checkout@v4  # Updated to the latest version (v4)
-
-      - name: Install Python
-        uses: actions/setup-python@v4  # Corrected to v4
+        uses: actions/checkout@v2
+      - name: Install python version 3.9
+        uses: actions/setup-python@v2
         with:
-          python-version: "3.10"
-
-      - name: Update pip
+          python-version: "3.9"
+      - name: update pip
         run: python -m pip install --upgrade pip
-
-      - name: Install Dependencies 
+      - name: install all dependencies
         run: pip install -r requirements.txt
-
-      - name: Run Tests
+      - name: test with pytest
         run: |
           pip install pytest
           pytest
