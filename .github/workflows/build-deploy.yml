@@ -24,15 +24,15 @@ jobs:
       postgres:
         image: postgres:latest
         env:
-          POSTGRES_PASSWORD: ${{secrets.POSTGRES_PASSWORD}}    # Superuser password
+          POSTGRES_PASSWORD: ${{secrets.DATABASE_PASSWORD}}    # Superuser password
           POSTGRES_DB: ${{secrets.DATABASE_NAME}}              # Default database name
         ports:
           - 5432:5432
-        options: >-
-          --health-cmd pg_isready
-          --health-interval 10s
-          --health-timeout 5s
-          --health-retries 5
+        options: > 
+          --health-cmd="pg_isready" 
+          --health-interval=10s 
+          --health-timeout=5s 
+          --health-retries=5
 
 
     runs-on: ubuntu-latest
