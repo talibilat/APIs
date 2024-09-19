@@ -8,33 +8,34 @@ on:
 
 jobs:
   job1:
-    env:       
-      DATABASE_HOSTNAME: localhost
-      DATABASE_PORT: 5432
-      DATABASE_PASSWORD: 123
-      DATABASE_NAME: fastapi
-      DATABASE_USERNAME: talib
-      SECRET_KEY: 09d25e094faa6ca2556c818166b7a9563b93f70f6f0f4caa6cf63b88e8d3e7
-      ALGORITHM: HS256
-      ACCESS_TOKEN_EXPIRE_MINUTES: 100
+    env:
+      DATABASE_HOSTNAME: ${{secrets.DATABASE_HOSTNAME}}
+      DATABASE_PORT: ${{secrets.DATABASE_PORT}} 
+      DATABASE_PASSWORD: ${{secrets.DATABASE_PASSWORD}}
+      DATABASE_NAME: ${{secrets.DATABASE_NAME}}
+      DATABASE_USERNAME: ${{secrets.DATABASE_USERNAME}}
+      SECRET_KEY: ${{secrets.SECRET_KEY}}
+      ALGORITHM: ${{secrets.ALGORITHM}}  
+      ACCESS_TOKEN_EXPIRE_MINUTES: ${{secrets.ACCESS_TOKEN_EXPIRE_MINUTES}}  
 
     runs-on: ubuntu-latest
+    
     steps:
       - name: pulling git repo
-        uses: actions/checkout@v4
+        uses: actions/checkout@v4  # Updated to the latest version (v4)
 
       - name: Install Python
-        uses: actions/setup-python@v2
+        uses: actions/setup-python@v4  # Corrected to v4
         with:
           python-version: "3.10"
-      
+
       - name: Update pip
         run: python -m pip install --upgrade pip
 
       - name: Install Dependencies 
         run: pip install -r requirements.txt
 
-      - name: Testing
+      - name: Run Tests
         run: |
           pip install pytest
           pytest
